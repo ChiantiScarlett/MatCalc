@@ -1,4 +1,4 @@
-from matcalc.error import *
+from matcalc.error import raise_InvalidValueError, raise_InvalidFormatError
 from fractions import Fraction
 
 
@@ -53,36 +53,39 @@ class Matrix:
     def check_matrix(self, matrix):
         # Check if matrix is in appropriate format
         if type(matrix) != list:
-            raise_error("Matrix should be in nested <list> format.")
+            raise_InvalidFormatError()
 
         if len(matrix) == 0:
-            raise_error("Matrix cannot be empty.")
+            raise_InvalidFormatError()
 
         for row in matrix:
             if type(row) != list:
-                raise_error("Matrix should be in nested <list> format.")
+                raise_InvalidFormatError()
             for entry in row:
                 if type(entry) == str:
-                    entry = list(map(str.strip, entry.split('/')))
-                    print(entry)
+                    f_entry = list(map(str.strip, entry.split('/')))
                     # Check if it is fraction <str>
-                    if len(entry) == 2:
-                        if not entry[0].isnumeric():
-                            raise_error('Matrix entry should be in <int>.')
-                        if not entry[1].isnumeric():
-                            raise_error('Matrix entry should be in <int>.')
+                    if len(f_entry) == 2:
+                        if not f_entry[0].isnumeric():
+                            raise_InvalidValueError(f_entry[0])
+                        if not f_entry[1].isnumeric():
+                            raise_InvalidValueError(f_entry[1])
 
                     # Check if it is numeric <str>
-                    elif len(entry) == 1:
+                    elif len(f_entry) == 1:
                         try:
-                            int(entry[0])
+                            int(f_entry[0])
                         except TypeError:
-                            raise_error('Matrix entry should be in <int>.')
+                            raise_InvalidValueError(entry)
                     else:
-                        raise_error('Matrix entry should be in <int>')
+                        raise_InvalidValueError(entry)
 
                 elif type(entry) != int:
-                    raise_error('Matrix entry should be in ')
+                    raise_InvalidValueError(entry)
+    def show(self):
+        for row in self.value:
+            for item in row:
+                print(str(item))
 
 
 class SquareMatrix(Matrix):
