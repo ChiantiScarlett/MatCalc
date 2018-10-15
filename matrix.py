@@ -31,6 +31,8 @@ class Matrix:
         This function is premised on the fact that all entries are convertible.
         """
         self.value = []
+        self._row_num = len(matrix)
+        self._col_num = len(matrix[0])
 
         for row in matrix:
             entry_row = []
@@ -82,10 +84,29 @@ class Matrix:
 
                 elif type(entry) != int:
                     raise_InvalidValueError(entry)
+
     def show(self):
+        # Find out maximum length of entries string
+        max_length = 0
         for row in self.value:
-            for item in row:
-                print(str(item))
+            for entry in row:
+                if len(str(entry)) + 2 > max_length:
+                    max_length = len(str(entry)) + 2
+
+        # Format
+        text = []
+        text.append('< Matrix, {} x {} >'.format(self._row_num,
+                                                 self._col_num))
+
+        for row in self.value:
+            entry_line = " "
+            for entry in row:
+                entry_str = str(entry) + " " * (max_length - len(str(entry)))
+                entry_line += entry_str
+            text.append(entry_line)
+
+        text = "\n\n".join(text)
+        print(text)
 
 
 class SquareMatrix(Matrix):
