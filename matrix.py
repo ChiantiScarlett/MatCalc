@@ -1,20 +1,21 @@
+from fractions import Fraction
+
+
 class Entry:
-    # Define a number in a class format.
+    # Define a number in a Fraction class format.
     def __init__(self, numerator, denominator=1):
-        self.numerator = numerator
-        self.denominator = denominator
+        self.value = Fraction(numerator, denominator)
 
     def __add__(self, other):
-        pass
+        frac = self.value + other.value
+        return Entry(frac._numerator, frac._denominator)
 
     def __mul__(self, other):
-        pass
+        frac = self.value * other.value
+        return Entry(frac._numerator, frac._denominator)
 
     def __str__(self):
-        if self.denominator == 1:
-            return self.numerator
-        else:
-            return '{} / {}'.format(self.numerator, self.denominator)
+        return self.value.__str__()
 
 
 class Matrix:
