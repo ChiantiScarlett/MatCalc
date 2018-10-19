@@ -1,20 +1,54 @@
-from matcalc.error import raise_InvalidValueError, raise_InvalidFormatError
+from matcalc.core import raise_InvalidValueError, raise_InvalidFormatError
+
 from fractions import Fraction
 
 
 class Entry:
     # Define a number in a Fraction class format.
-    def __init__(self, numerator, denominator=1):
-        # Check if they are numbers
-        self.value = Fraction(numerator, denominator)
+    def __init__(self, value):
+        # Raise error if the value is in invalid format.
+        # Examples of valid format are 1 , '1' , '2/3'
+        # Invalid formats can be 1/3 , 1.6 , [3]
+
+        if type(value) == int:
+            self.value = Fraction(value)
+        elif type(value) != str:
+            raise_InvalidValueError(value)
+        elif value.isnumeric():
+            self.value = Fraction(int(value))
+        elif len(value.split('/')) != 2:
+            raise_InvalidValueError(value)
+        else:
+            numer, denom = list(map(str.strip, value.split('/')))
+            if not (numer.isnumeric() and denom.isnumeric()):
+                raise_InvalidValueError(value)
+
+            self.value = Fraction(int(numer), int(denom))
+
+    def _simplify_fraction(self, frac):
+        """
+        Since Fraction does not always simplifies the fraction, this method is
+        necessary for addition and multiplication among Fractions.
+        """
+
+        # Euclid Method of getting GCD
+        numer = frac._numerator
+        denom = frac._denominator
+
+        while denom:
+            numer, denom = denom, numer % denom
+        gcd = numer
+
+        numer = int(frac._numerator / gcd)
+        denom = int(frac._denominator / gcd)
+
+        return Entry('{} / {}'.format(numer, denom))
 
     def __add__(self, other):
-        frac = self.value + other.value
-        return Entry(frac._numerator, frac._denominator)
+        return self._simplify_fraction(self.value + other.value)
 
     def __mul__(self, other):
-        frac = self.value * other.value
-        return Entry(frac._numerator, frac._denominator)
+        return self._simplify_fraction(self.value * other.value)
 
     def __str__(self):
         return str(self.value)
@@ -23,10 +57,10 @@ class Entry:
 class Matrix:
     def __init__(self, matrix):
         # Check if matrix is in appropriate format
-        self.check_matrix(matrix)
-        self.convert_matrix(matrix)
+        self._check_matrix(matrix)
+        self._convert_matrix(matrix)
 
-    def convert_matrix(self, matrix):
+    def _convert_matrix(self, matrix):
         """
         This function is premised on the fact that all entries are convertible.
         """
@@ -37,22 +71,11 @@ class Matrix:
         for row in matrix:
             entry_row = []
             for entry in row:
-                if type(entry) == int:
-                    entry = Entry(entry)
-                elif type(entry) == str:
-                    entry = list(map(str.strip, entry.split('/')))
-                    if len(entry) == 2:
-                        # Fraction
-                        entry = Entry(int(entry[0]), int(entry[1]))
-                    elif len(entry) == 1:
-                        # numeric <str>
-                        entry = Entry(int(entry[0]))
-
-                entry_row.append(entry)
+                entry_row.append(Entry(entry))
 
             self.value.append(entry_row)
 
-    def check_matrix(self, matrix):
+    def _check_matrix(self, matrix):
         # Check if matrix is in appropriate format
         if type(matrix) != list:
             raise_InvalidFormatError()
@@ -60,30 +83,25 @@ class Matrix:
         if len(matrix) == 0:
             raise_InvalidFormatError()
 
+        col_num = len(matrix[0])
+
         for row in matrix:
-            if type(row) != list:
+            if len(row) != col_num:
                 raise_InvalidFormatError()
-            for entry in row:
-                if type(entry) == str:
-                    f_entry = list(map(str.strip, entry.split('/')))
-                    # Check if it is fraction <str>
-                    if len(f_entry) == 2:
-                        if not f_entry[0].isnumeric():
-                            raise_InvalidValueError(f_entry[0])
-                        if not f_entry[1].isnumeric():
-                            raise_InvalidValueError(f_entry[1])
 
-                    # Check if it is numeric <str>
-                    elif len(f_entry) == 1:
-                        try:
-                            int(f_entry[0])
-                        except TypeError:
-                            raise_InvalidValueError(entry)
-                    else:
-                        raise_InvalidValueError(entry)
+    def transpose(self):
+        """
+        Transpose entries
+        """
+        new_value = []
+        for col in range(len(self.value[0])):
+            new_row = []
+            for row in self.value:
+                new_row.append(row[col])
+            new_value.append(new_row)
 
-                elif type(entry) != int:
-                    raise_InvalidValueError(entry)
+        self.value = new_value
+        self._row_num, self._col_num = self._col_num, self._row_num  # swap
 
     def show(self):
         # Find out maximum length of entries string
@@ -95,8 +113,9 @@ class Matrix:
 
         # Format
         text = []
-        text.append('< Matrix, {} x {} >'.format(self._row_num,
-                                                 self._col_num))
+        text.append('< {}, {} x {} >'.format('Matrix',
+                                             self._row_num,
+                                             self._col_num))
 
         for row in self.value:
             entry_line = " "
@@ -107,13 +126,3 @@ class Matrix:
 
         text = "\n\n".join(text)
         print(text)
-
-
-class SquareMatrix(Matrix):
-    def __init__(self, matrix):
-        super().__init__(matrix)
-
-
-class AugmentedMatrix(Matrix):
-    def __init__(self, matrix):
-        super().__init__(matrix)
